@@ -27,4 +27,4 @@ spec:
           value: admin
         - name: MONGO_INITDB_ROOT_PASSWORD
           value: admin
-      imagePullPolicy: {{ .Values.mongodbdeployment.image.pullPolicy }}
+      restartPolicy: {{ .Values.mongodbdeployment.image.restartPolicy }}

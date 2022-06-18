@@ -29,4 +29,4 @@ spec:
           value: admin
         - name: MONGODB_HOST
           value: devops-project-2022-mongodb-service
-      imagePullPolicy: {{ .Values.backenddeployment.image.pullPolicy }}
+      restartPolicy: {{ .Values.backenddeployment.image.restartPolicy }}
