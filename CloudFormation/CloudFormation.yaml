@@ -1,0 +1,330 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation template for Fargate.
+
+Resources:
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: mycluster
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  SubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: us-east-2a
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
+      
+  SubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: us-east-2b
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      LoadBalancerAttributes:
+        # this is the default, but is specified here in case it needs to be changed
+        - Key: idle_timeout.timeout_seconds
+          Value: 60
+      Name: my-loadbalancer
+      # "internal" is also an option
+      Scheme: internet-facing
+      Subnets:
+        - !Ref SubnetA
+        - !Ref SubnetB
+      SecurityGroups:
+        - !Ref LoadBalancerSecurityGroup
+  
+  MyMongoDBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      # will look for a 200 status code by default unless specified otherwise
+      HealthCheckPath: /
+      HealthCheckTimeoutSeconds: 5
+      UnhealthyThresholdCount: 2
+      HealthyThresholdCount: 5
+      Name: my-mongodb-targetgroup
+      Port: 27017
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 60 # default is 300
+      TargetType: ip
+      VpcId: !Ref VPC
+
+  MyBETargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      # will look for a 200 status code by default unless specified otherwise
+      HealthCheckPath: /
+      HealthCheckTimeoutSeconds: 5
+      UnhealthyThresholdCount: 2
+      HealthyThresholdCount: 5
+      Name: my-be-targetgroup
+      Port: 8080
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 60 # default is 300
+      TargetType: ip
+      VpcId: !Ref VPC
+      
+  
+  MyFETargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      # will look for a 200 status code by default unless specified otherwise
+      HealthCheckPath: /
+      HealthCheckTimeoutSeconds: 5
+      UnhealthyThresholdCount: 2
+      HealthyThresholdCount: 5
+      Name: my-fe-targetgroup
+      Port: 3000
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 60 # default is 300
+      TargetType: ip
+      VpcId: !Ref VPC
+  
+  ListenerHTTP:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref MyFETargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  MyLogGroup: 
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      LogGroupName: my-logs
+      RetentionInDays: 7
+
+  MyMongoDBTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 512
+      Memory: 1024
+      ExecutionRoleArn: arn:aws:iam::xxxxxxxxxxxx:role/ecsTaskExecutionRole
+      TaskRoleArn: arn:aws:iam::xxxxxxxxxxxx:role/ecsTaskExecutionRole
+      ContainerDefinitions:
+        - Name: my-mongodb-container
+          Image: xxxxxxxxxxxx.dkr.ecr.us-east-2.amazonaws.com/<image-name>:<tag>
+          PortMappings:
+            - ContainerPort: 27017
+          # Send logs to CloudWatch Logs
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: us-east-2
+              awslogs-group: my-logs
+              awslogs-stream-prefix: ecs
+          Environment:
+            - Name: MONGO_INITDB_ROOT_USERNAME
+              Value: admin
+            - Name: MONGO_INITDB_ROOT_PASSWORD
+              Value: admin
+
+  MyMongoDBService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - ListenerHTTP
+    Properties: 
+      ServiceName: my-mongodb-service-cloudformation
+      Cluster: mycluster
+      TaskDefinition: !Ref MyMongoDBTaskDefinition
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      DesiredCount: 1
+      # This may need to be adjusted if the container takes a while to start up
+      # HealthCheckGracePeriodSeconds: 0
+      LaunchType: FARGATE
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          # change to DISABLED if you're using private subnets that have access to a NAT gateway
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref SubnetA
+            - !Ref SubnetB
+          SecurityGroups:
+            - !Ref MyMongoDBContainerSecurityGroup
+
+  MyBETaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 512
+      Memory: 1024
+      ExecutionRoleArn: arn:aws:iam::xxxxxxxxxxxx:role/ecsTaskExecutionRole
+      TaskRoleArn: arn:aws:iam::xxxxxxxxxxxx:role/ecsTaskExecutionRole
+      ContainerDefinitions:
+        - Name: my-be-container
+          Image: xxxxxxxxxxxx.dkr.ecr.us-east-2.amazonaws.com/<image-name>:<tag>
+          PortMappings:
+            - ContainerPort: 8080
+          # Send logs to CloudWatch Logs
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: us-east-2
+              awslogs-group: my-logs
+              awslogs-stream-prefix: ecs
+          Environment:
+            - Name: MONGODB_USER
+              Value: admin
+            - Name: MONGODB_PASSWORD
+              Value: admin
+            - Name: MONGODB_HOST
+              Value: localhost:27017
+
+  MyBEService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - ListenerHTTP
+    Properties: 
+      ServiceName: my-be-service-cloudformation
+      Cluster: mycluster
+      TaskDefinition: !Ref MyBETaskDefinition
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      DesiredCount: 1
+      # This may need to be adjusted if the container takes a while to start up
+      #HealthCheckGracePeriodSeconds: 0
+      LaunchType: FARGATE
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          # change to DISABLED if you're using private subnets that have access to a NAT gateway
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref SubnetA
+            - !Ref SubnetB
+          SecurityGroups:
+            - !Ref MyBEContainerSecurityGroup
+      
+      
+  MyFETaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 512
+      Memory: 1024
+      ExecutionRoleArn: arn:aws:iam::xxxxxxxxxxxx:role/ecsTaskExecutionRole
+      TaskRoleArn: arn:aws:iam::xxxxxxxxxxxx:role/ecsTaskExecutionRole
+      ContainerDefinitions:
+        - Name: my-fe-container
+          Image: xxxxxxxxxxxx.dkr.ecr.us-east-2.amazonaws.com/<image-name>:<tag>
+          PortMappings:
+            - ContainerPort: 3000
+          # Send logs to CloudWatch Logs
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: us-east-2
+              awslogs-group: my-logs
+              awslogs-stream-prefix: ecs
+
+  MyFEService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - ListenerHTTP
+    Properties: 
+      ServiceName: my-fe-service-cloudformation
+      Cluster: mycluster
+      TaskDefinition: !Ref MyFETaskDefinition
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          # change to DISABLED if you're using private subnets that have access to a NAT gateway
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref SubnetA
+            - !Ref SubnetB
+          SecurityGroups:
+            - !Ref MyFEContainerSecurityGroup
+      LoadBalancers:
+        - ContainerName: my-fe-container
+          ContainerPort: 3000
+          TargetGroupArn: !Ref MyFETargetGroup
+  
+  MyMongoDBContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: MyMongoDBContainer Security Group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 27017
+          ToPort: 27017
+          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+  
+  MyBEContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: MyBEContainer Security Group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+
+  MyFEContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: MyFEContainer Security Group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup        
+
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: LB Security Group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
