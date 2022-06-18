@@ -1,5 +1,32 @@
 apiVersion: v1
 entries:
+  grafana:
+  - apiVersion: v2
+    appVersion: 8.5.3
+    created: "2022-06-18T14:06:26.630962691Z"
+    description: The leading tool for querying and visualizing time series and metrics.
+    digest: d9ec6be26898b0b6b4244d7afc1f2e3d3ca72dbb2e9f52a07fed35b5cce8800f
+    home: https://grafana.net
+    icon: https://raw.githubusercontent.com/grafana/grafana/master/public/img/logo_transparent_400x.png
+    kubeVersion: ^1.8.0-0
+    maintainers:
+    - email: zanhsieh@gmail.com
+      name: zanhsieh
+    - email: rluckie@cisco.com
+      name: rtluckie
+    - email: maor.friedman@redhat.com
+      name: maorfr
+    - email: miroslav.hadzhiev@gmail.com
+      name: Xtigyro
+    - email: mail@torstenwalter.de
+      name: torstenwalter
+    name: grafana
+    sources:
+    - https://github.com/grafana/grafana
+    type: application
+    urls:
+    - https://github.com/EmilPetrovski/click-app/releases/download/grafana-6.30.2/grafana-6.30.2.tgz
+    version: 6.30.2
   my-app:
   - apiVersion: v2
     appVersion: 1.16.0
@@ -11,6 +38,16 @@ entries:
     urls:
     - https://github.com/EmilPetrovski/click-app/releases/download/my-app-0.1.444/my-app-0.1.444.tgz
     version: 0.1.444
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2022-06-18T14:06:26.736780279Z"
+    description: A Helm chart for Kubernetes
+    digest: 71d0869c9b1febfc0491aac8dba1227647aa48230b1a7537b040db7525ae65f5
+    name: my-app
+    type: application
+    urls:
+    - https://github.com/EmilPetrovski/click-app/releases/download/my-app-0.1.5/my-app-0.1.5.tgz
+    version: 0.1.5
   - apiVersion: v2
     appVersion: 1.16.0
     created: "2022-06-18T05:09:15.374932381Z"
@@ -61,4 +98,37 @@ entries:
     urls:
     - https://github.com/EmilPetrovski/click-app/releases/download/my-app-0.1.0/my-app-0.1.0.tgz
     version: 0.1.0
-generated: "2022-06-18T05:13:56.885514663Z"
+  prometheus:
+  - apiVersion: v2
+    appVersion: 2.34.0
+    created: "2022-06-18T14:06:26.860336336Z"
+    dependencies:
+    - condition: kubeStateMetrics.enabled
+      name: kube-state-metrics
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 4.7.*
+    description: Prometheus is a monitoring system and time series database.
+    digest: f428b013b73430b6235603945547da0f6c719445bcc47c27cf1f349d1135202f
+    home: https://prometheus.io/
+    icon: https://raw.githubusercontent.com/prometheus/prometheus.github.io/master/assets/prometheus_logo-cb55bb5c346.png
+    maintainers:
+    - email: gianrubio@gmail.com
+      name: gianrubio
+    - email: zanhsieh@gmail.com
+      name: zanhsieh
+    - email: miroslav.hadzhiev@gmail.com
+      name: Xtigyro
+    - email: naseem@transit.app
+      name: naseemkullah
+    name: prometheus
+    sources:
+    - https://github.com/prometheus/alertmanager
+    - https://github.com/prometheus/prometheus
+    - https://github.com/prometheus/pushgateway
+    - https://github.com/prometheus/node_exporter
+    - https://github.com/kubernetes/kube-state-metrics
+    type: application
+    urls:
+    - https://github.com/EmilPetrovski/click-app/releases/download/prometheus-15.10.1/prometheus-15.10.1.tgz
+    version: 15.10.1
+generated: "2022-06-18T14:06:26.86065325Z"
