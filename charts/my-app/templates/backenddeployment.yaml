@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-project-2022-backend-deployment
+  labels:
+    app: my-app
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: my-app
+        tier: backend
+    spec:
+      containers:
+      - name: {{ .Values.backenddeployment.name }}
+        image: {{ .Values.backenddeployment.image.repository }}:{{ .Values.backenddeployment.image.tag }}
+        ports:
+        - containerPort: {{ .Values.backenddeployment.image.port }}
+        env:
+        - name: MONGODB_USER
+          value: admin
+        - name: MONGODB_PASSWORD
+          value: admin
+        - name: MONGODB_HOST
+          value: devops-project-2022-mongodb-service
+      imagePullPolicy: {{ .Values.backenddeployment.image.pullPolicy }}

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-project-2022-mongodb-deployment
+  labels:
+    app: my-app
+    tier: mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+      tier: mongodb
+  template:
+    metadata:
+      labels:
+        app: my-app
+        tier: mongodb
+    spec:
+      containers:
+      - name: {{ .Values.mongodbdeployment.name }}
+        image: {{ .Values.mongodbdeployment.image.repository }}:{{ .Values.mongodbdeployment.image.tag }}
+        ports:
+        - containerPort: {{ .Values.mongodbdeployment.image.port }}
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: admin
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: admin
+      imagePullPolicy: {{ .Values.mongodbdeployment.image.pullPolicy }}

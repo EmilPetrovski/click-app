@@ -1,0 +1,32 @@
+mongodbdeployment:
+  name: mongodbdeployment
+  image: 
+    repository: petrovskiemil/devops-project-2022-mongodb
+    tag: main
+    pullPolicy: Always
+    port: 27017
+  service:
+    name: mongodbservice
+    port: 27017
+
+backenddeployment:
+  name: backenddeployment
+  image: 
+    repository: petrovskiemil/devops-project-2022-backend
+    tag: main
+    pullPolicy: Always
+    port: 8080
+  service:
+    name: backend
+    port: 8080
+
+frontenddeployment:
+  name: frontenddeployment
+  image: 
+    repository: petrovskiemil/devops-project-2022-frontend-hardcoded-clusterip
+    tag: main
+    pullPolicy: Always
+    port: 3000
+  service:
+    name: frontendservice
+    port: 3000
