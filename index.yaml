@@ -3,6 +3,16 @@ entries:
   my-app:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2022-06-18T05:13:56.885464963Z"
+    description: A Helm chart for Kubernetes
+    digest: 2420cc5d859a27bd47c23d3f041d3f64c218fdf08e644a522fe7178295eeca09
+    name: my-app
+    type: application
+    urls:
+    - https://github.com/EmilPetrovski/click-app/releases/download/my-app-0.1.444/my-app-0.1.444.tgz
+    version: 0.1.444
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2022-06-18T05:09:15.374932381Z"
     description: A Helm chart for Kubernetes
     digest: 254647dcc8f2e8df11ae2d7ebd66fe0ab186a962b8ef1cf574314a3bd6291472
@@ -51,4 +61,4 @@ entries:
     urls:
     - https://github.com/EmilPetrovski/click-app/releases/download/my-app-0.1.0/my-app-0.1.0.tgz
     version: 0.1.0
-generated: "2022-06-18T05:09:15.374962881Z"
+generated: "2022-06-18T05:13:56.885514663Z"
