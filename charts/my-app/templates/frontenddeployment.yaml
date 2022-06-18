@@ -22,4 +22,4 @@ spec:
         image: {{ .Values.frontenddeployment.image }}:{{ .Values.frontenddeployment.image.tag }}
         ports:
         - containerPort: {{ .Values.frontenddeployment.port }}  
-      restartPolicy: {{ .Values.frontenddeployment.restartPolicy }}
+      restartPolicy: {{ .Values.frontenddeployment.image.restartPolicy }}
