@@ -1,4 +1,4 @@
-name: Release Charts
+name: Build Docker images and deploy Helm to Kubernetes; Release Charts
 
 on:
   push:
@@ -6,6 +6,36 @@ on:
       - main
 
 jobs:
+
+  build: 
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v1 
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Docker build frontend
+      run: |
+        docker build ./frontend -t petrovskiemil/devops-project-2022-frontend-hardcoded-clusterip-githubactions:1.0.0
+
+    - name: Docker build backend
+      run: |
+        docker build ./backend -t petrovskiemil/devops-project-2022-backend-githubactions:1.0.0
+
+    - name: Docker build mongodb
+      run: |
+        docker build ./mongo -t petrovskiemil/devops-project-2022-mongodb-githubactions:1.0.0   
+
+    - name: Docker push
+      run: |
+        docker push petrovskiemil/devops-project-2022-frontend-hardcoded-clusterip-githubactions:1.0.0
+        docker push petrovskiemil/devops-project-2022-backend-githubactions:1.0.0
+        docker push petrovskiemil/devops-project-2022-mongodb-githubactions:1.0.0
+
   release:
     # depending on default permission settings for your org (contents being read-only or read-write for workloads), you will have to add permissions
     # see: https://docs.github.com/en/actions/security-guides/automatic-token-authentication#modifying-the-permissions-for-the-github_token
