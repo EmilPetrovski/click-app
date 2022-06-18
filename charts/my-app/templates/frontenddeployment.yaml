@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: {{ .Values.frontenddeployment.name }}
-        image: {{ .Values.frontenddeployment.image }}:{{ .Values.frontenddeployment.image.tag }}
+        image: {{ .Values.frontenddeployment.image.repository }}:{{ .Values.frontenddeployment.image.tag }}
         ports:
-        - containerPort: {{ .Values.frontenddeployment.port }}  
+        - containerPort: {{ .Values.frontenddeployment.image.port }}  
       restartPolicy: {{ .Values.frontenddeployment.image.restartPolicy }}
